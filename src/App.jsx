@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState,useEffect } from 'react';
 import ActionAreaCard from './ActionAreaCard';
+import { PieChart, Pie, Cell} from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+
+
 import Modal from './Modal';
 import ModalExpense from './ModalExpense';
-
-
-
 import LocalPizzaIcon from '@mui/icons-material/LocalPizza';
 import ModeEditRoundedIcon from '@mui/icons-material/ModeEditRounded';
 import HighlightOffRoundedIcon from '@mui/icons-material/HighlightOffRounded';
@@ -12,56 +13,107 @@ import HighlightOffRoundedIcon from '@mui/icons-material/HighlightOffRounded';
 function App() {
   const [showModal, setShowModal] = useState(false);
   const [showExpenseModal, setShowExpenseModal] = useState(false);
-  const [expenses, setExpenses] = useState([]);
+  const [expenses, setExpenses] = useState(()=>{
+    const stored=localStorage.getItem('expenses');
+return stored ? JSON.parse(stored):[];
+  });
 
-  // ✅ Wallet balance stored in React state (not just localStorage)
   const [walletBalance, setWalletBalance] = useState(() => {
     const stored = localStorage.getItem('walletBalance');
     return stored ? Number(stored) : 5000;
   });
 
+  // ✅ NEW STATES for edit
+  const [editMode, setEditMode] = useState(false);
+  const [currentEditIndex, setCurrentEditIndex] = useState(null);
+
   const handleClick = () => setShowModal(true);
-  const handleExpenseClick = () => setShowExpenseModal(true);
-
-  const handleIncome = () => {
-    console.log('Income amount clicked');
-    setShowModal(false);
+  const handleExpenseClick = () => {
+    setEditMode(false); // not editing
+    setShowExpenseModal(true);
   };
 
-  const handleAddBalance = () => {
-    console.log('Add balance clicked');
-    setShowModal(false);
-  };
+  useEffect(()=>{
+localStorage.setItem('expenses',JSON.stringify(expenses))
+localStorage.setItem('walletBalance',walletBalance);
+  },[walletBalance,expenses])
 
-  // ✅ When expense added from modal
   const handleAddExpense = (newExpense) => {
     const expenseAmount = Number(newExpense.price);
 
-    // ✅ Check if expense exceeds wallet
     if (expenseAmount > walletBalance) {
       alert('❌ Expense amount cannot be greater than wallet balance!');
       return;
     }
 
-    // ✅ Deduct from wallet balance
-    const updatedBalance = walletBalance - expenseAmount;
-    setWalletBalance(updatedBalance);
-    localStorage.setItem('walletBalance', updatedBalance);
+    if (editMode && currentEditIndex !== null) {
+      // ✅ EDIT EXISTING EXPENSE
+      const updatedExpenses = [...expenses];
+      const oldExpense = updatedExpenses[currentEditIndex];
+      const balanceDiff = expenseAmount - Number(oldExpense.price);
 
-    // ✅ Add expense to list
-    setExpenses((prev) => [...prev, newExpense]);
+      // Adjust wallet based on difference
+      if (walletBalance - balanceDiff < 0) {
+        alert('❌ Not enough wallet balance for this update!');
+        return;
+      }
+
+      updatedExpenses[currentEditIndex] = newExpense;
+      setExpenses(updatedExpenses);
+
+      const newWallet = walletBalance - balanceDiff;
+      setWalletBalance(newWallet);
+      localStorage.setItem('walletBalance', newWallet);
+
+      setEditMode(false);
+      setCurrentEditIndex(null);
+    } else {
+      // ✅ ADD NEW EXPENSE
+      const updatedBalance = walletBalance - expenseAmount;
+      setWalletBalance(updatedBalance);
+      localStorage.setItem('walletBalance', updatedBalance);
+      localStorage.setItem('expenses', JSON.stringify([...expenses,newExpense]))
+      setExpenses((prev) => [...prev, newExpense]);
+    }
+
     setShowExpenseModal(false);
   };
 
   const handleDeleteExpense = (index) => {
+    const deleted = expenses[index];
+    const refund = Number(deleted.price);
+    const newWallet = walletBalance + refund;
+
     setExpenses((prev) => prev.filter((_, i) => i !== index));
+    setWalletBalance(newWallet);
+    localStorage.setItem('walletBalance', newWallet);
+    localStorage.setItem('expenses', JSON.stringify(expenses))
   };
+
+  // ✅ EDIT BUTTON HANDLER
+  const handleEditExpense = (index) => {
+    setEditMode(true);
+    setCurrentEditIndex(index);
+    setShowExpenseModal(true);
+  };
+
+  const chartData = expenses.map(exp => ({
+  name: exp.category,
+  value: Number(exp.price)
+}));
+
+const categoryTotals = expenses.reduce((acc, exp) => {
+  acc[exp.category] = (acc[exp.category] || 0) + Number(exp.price);
+  return acc;
+}, {});
+
+const barData = Object.entries(categoryTotals).map(([name, value]) => ({ name, value }));
+
 
   return (
     <>
       <h1 style={{ color: 'white', marginLeft: '10px' }}>Expense Tracker</h1>
 
-      {/* Wallet and Expenses Cards */}
       <div
         style={{
           background: '#2e2e2e',
@@ -69,9 +121,7 @@ function App() {
           margin: '10px',
           borderRadius: '10px',
           display: 'flex',
-          flexDirection: 'row',
           alignItems: 'center',
-          justifyContent: 'flex-start',
           gap: '20px',
           flexWrap: 'wrap',
           padding: '20px',
@@ -93,41 +143,44 @@ function App() {
           buttonColor="red"
           handleClick={handleExpenseClick}
         />
+  <div style={{ width: '350px', height: '240px', background: 'white', borderRadius: '10px' }}>
+    <ResponsiveContainer>
+      <PieChart>
+        <Pie
+          data={chartData}
+          dataKey="value"
+          nameKey="name"
+          cx="50%"
+          cy="50%"
+          outerRadius={80}
+          fill="#8884d8"
+          label
+        >
+          {chartData.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF'][index % 5]} />
+          ))}
+        </Pie>
+        <Tooltip />
+        <Legend />
+      </PieChart>
+    </ResponsiveContainer>
+  </div>
+
       </div>
 
-      {/* Transaction and Expense Section */}
       <div
         style={{
           display: 'flex',
-          flexDirection: 'row',
           width: '100%',
           justifyContent: 'space-between',
           alignItems: 'flex-start',
           marginTop: '20px',
           padding: '0 10px',
-          boxSizing: 'border-box',
         }}
       >
-        {/* Left Side - Recent Transactions */}
-        <div
-          style={{
-            width: '74%',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '10px',
-          }}
-        >
+        <div style={{ width: '74%', display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <h3 style={{ color: 'white', margin: 0 }}>Recent Transactions</h3>
-          <div
-            style={{
-              background: 'white',
-              borderRadius: '10px',
-              width: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              padding: '10px',
-            }}
-          >
+          <div style={{ background: 'white', borderRadius: '10px', padding: '10px' }}>
             {expenses.length === 0 ? (
               <div style={{ textAlign: 'center', color: '#777', padding: '20px' }}>
                 No expenses yet. Click “+ Add Expenses” to add one.
@@ -174,6 +227,7 @@ function App() {
                           borderRadius: '25%',
                           cursor: 'pointer',
                         }}
+                        onClick={() => handleEditExpense(index)}
                       />
                     </div>
                   </div>
@@ -184,28 +238,27 @@ function App() {
           </div>
         </div>
 
-        {/* Right Side - Top Expenses */}
-        <div
-          style={{
-            width: '23%',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '10px',
-          }}
-        >
+        <div style={{ width: '23%', display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <h3 style={{ color: 'white', margin: 0 }}>Top Expenses</h3>
-          <div
-            style={{
-              background: 'white',
-              borderRadius: '10px',
-              height: '250px',
-              width: '100%',
-            }}
-          ></div>
+          <div style={{ background: 'white', borderRadius: '10px', height: '250px' }}>
+  <div style={{ width: '300px', height: '250px', background: 'white', borderRadius: '10px' }}>
+    <ResponsiveContainer>
+      <BarChart data={barData}>
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey="name" />
+        <YAxis />
+        <Tooltip />
+        <Legend />
+        <Bar dataKey="value" fill="#82ca9d" />
+      </BarChart>
+    </ResponsiveContainer>
+  </div>
+
+            
+          </div>
         </div>
       </div>
 
-      {/* Modal for Income */}
       {showModal && (
         <Modal
           titleBalance="Add Balance"
@@ -218,15 +271,15 @@ function App() {
         />
       )}
 
-      {/* ✅ Expense Modal */}
       {showExpenseModal && (
         <ModalExpense
-          titleExpense="Add Expenses"
-          addExpenseButton="Add Expense"
+          titleExpense={editMode ? 'Edit Expense' : 'Add Expenses'}
+          addExpenseButton={editMode ? 'Save Changes' : 'Add Expense'}
           cancelButton="Cancel"
           onAddExpense={handleAddExpense}
           onCancel={() => setShowExpenseModal(false)}
-          walletBalance={walletBalance} // ✅ passed
+          walletBalance={walletBalance}
+          editData={editMode ? expenses[currentEditIndex] : null} // ✅ Pass existing data
         />
       )}
     </>

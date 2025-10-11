@@ -1,7 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 
-const ModalExpense = ({ titleExpense, addExpenseButton, cancelButton, onAddExpense, onCancel, walletBalance }) => {
+const ModalExpense = ({
+  titleExpense,
+  addExpenseButton,
+  cancelButton,
+  onAddExpense,
+  onCancel,
+  walletBalance,
+  editData, // ✅ new prop
+}) => {
   const categories = ['Food', 'Entertainment', 'Travel', 'Utilities', 'Other'];
 
   const [formData, setFormData] = useState({
@@ -10,6 +18,11 @@ const ModalExpense = ({ titleExpense, addExpenseButton, cancelButton, onAddExpen
     category: '',
     date: '',
   });
+
+  // ✅ Prefill when editData changes
+  useEffect(() => {
+    if (editData) setFormData(editData);
+  }, [editData]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -23,8 +36,6 @@ const ModalExpense = ({ titleExpense, addExpenseButton, cancelButton, onAddExpen
     }
 
     const price = Number(formData.price);
-
-    // ✅ Validation: expense cannot exceed wallet balance
     if (price > walletBalance) {
       alert(`❌ Not enough balance! Your wallet has only ₹${walletBalance}.`);
       return;
@@ -60,7 +71,6 @@ const ModalExpense = ({ titleExpense, addExpenseButton, cancelButton, onAddExpen
           {titleExpense}
         </h3>
 
-        {/* Form fields */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '20px' }}>
           <input
             type="text"
@@ -68,7 +78,7 @@ const ModalExpense = ({ titleExpense, addExpenseButton, cancelButton, onAddExpen
             placeholder="Title"
             value={formData.title}
             onChange={handleChange}
-            style={{ padding: '10px', border: '1px solid #ccc', borderRadius: '8px', fontSize: '14px' }}
+            style={{ padding: '10px', border: '1px solid #ccc', borderRadius: '8px' }}
           />
           <input
             type="number"
@@ -76,14 +86,13 @@ const ModalExpense = ({ titleExpense, addExpenseButton, cancelButton, onAddExpen
             placeholder="Price"
             value={formData.price}
             onChange={handleChange}
-            style={{ padding: '10px', border: '1px solid #ccc', borderRadius: '8px', fontSize: '14px' }}
+            style={{ padding: '10px', border: '1px solid #ccc', borderRadius: '8px' }}
           />
-
           <select
             name="category"
             value={formData.category}
             onChange={handleChange}
-            style={{ padding: '10px', border: '1px solid #ccc', borderRadius: '8px', fontSize: '14px' }}
+            style={{ padding: '10px', border: '1px solid #ccc', borderRadius: '8px' }}
           >
             <option value="" disabled>
               Select category
@@ -94,7 +103,6 @@ const ModalExpense = ({ titleExpense, addExpenseButton, cancelButton, onAddExpen
               </option>
             ))}
           </select>
-
           <div
             style={{
               display: 'flex',
@@ -115,7 +123,6 @@ const ModalExpense = ({ titleExpense, addExpenseButton, cancelButton, onAddExpen
           </div>
         </div>
 
-        {/* Action Buttons */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
           <button
             onClick={handleAddExpenseClick}
