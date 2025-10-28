@@ -1,6 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 
-const Modal = ({ show,titleBalance,titleExpense,addExpenseButton,addBalance,incomeButton,cancelButton, onClose, onIncome, onAddBalance }) => {
+const Modal = ({
+  show,
+  titleBalance,
+  titleExpense,
+  addExpenseButton,
+  addBalance,
+  incomeButton,
+  cancelButton,
+  onClose,
+  onIncome,
+  onAddBalance
+}) => {
+  const [amount, setAmount] = useState("");
+
   if (!show) return null;
 
   const modalStyle = {
@@ -28,22 +41,42 @@ const Modal = ({ show,titleBalance,titleExpense,addExpenseButton,addBalance,inco
     border: 'none',
   };
 
+  // ✅ same add balance logic
+  const handleAddBalance = () => {
+    if (!amount || isNaN(amount) || Number(amount) <= 0) {
+      alert("Please enter a valid amount");
+      return;
+    }
+    onAddBalance(Number(amount)); // pass amount to parent
+    setAmount("");
+    onClose();
+  };
+
   return (
     <div style={modalStyle}>
       <div>{titleBalance}</div>
       <div style={{ display: 'flex', gap: '5px' }}>
-        <button
-          style={{ ...buttonStyle, background: 'white' }}
-          onClick={onIncome}
-        >
-          {incomeButton}
-        </button>
+        {/* ✅ replaced "Income Amount" button with input box */}
+        <input
+          type="number"
+          placeholder="Enter Amount"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          style={{
+            padding: '8px',
+            borderRadius: '8px',
+            border: '1px solid gray',
+            width: '90px',
+          }}
+        />
+
         <button
           style={{ ...buttonStyle, background: 'yellow' }}
-          onClick={onAddBalance}
+          onClick={handleAddBalance}
         >
           Add Balance
         </button>
+
         <button
           style={{ ...buttonStyle, background: '#5e5e5e' }}
           onClick={onClose}

@@ -1,8 +1,16 @@
-import { useState,useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import ActionAreaCard from './ActionAreaCard';
-import { PieChart, Pie, Cell} from 'recharts';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-
+import { PieChart, Pie, Cell } from 'recharts';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
 
 import Modal from './Modal';
 import ModalExpense from './ModalExpense';
@@ -13,9 +21,9 @@ import HighlightOffRoundedIcon from '@mui/icons-material/HighlightOffRounded';
 function App() {
   const [showModal, setShowModal] = useState(false);
   const [showExpenseModal, setShowExpenseModal] = useState(false);
-  const [expenses, setExpenses] = useState(()=>{
-    const stored=localStorage.getItem('expenses');
-return stored ? JSON.parse(stored):[];
+  const [expenses, setExpenses] = useState(() => {
+    const stored = localStorage.getItem('expenses');
+    return stored ? JSON.parse(stored) : [];
   });
 
   const [walletBalance, setWalletBalance] = useState(() => {
@@ -23,20 +31,21 @@ return stored ? JSON.parse(stored):[];
     return stored ? Number(stored) : 5000;
   });
 
-  // ✅ NEW STATES for edit
   const [editMode, setEditMode] = useState(false);
   const [currentEditIndex, setCurrentEditIndex] = useState(null);
 
   const handleClick = () => setShowModal(true);
+  const handleCloseModal = () => setShowModal(false);
+
   const handleExpenseClick = () => {
-    setEditMode(false); // not editing
+    setEditMode(false);
     setShowExpenseModal(true);
   };
 
-  useEffect(()=>{
-localStorage.setItem('expenses',JSON.stringify(expenses))
-localStorage.setItem('walletBalance',walletBalance);
-  },[walletBalance,expenses])
+  useEffect(() => {
+    localStorage.setItem('expenses', JSON.stringify(expenses));
+    localStorage.setItem('walletBalance', walletBalance);
+  }, [walletBalance, expenses]);
 
   const handleAddExpense = (newExpense) => {
     const expenseAmount = Number(newExpense.price);
@@ -47,12 +56,10 @@ localStorage.setItem('walletBalance',walletBalance);
     }
 
     if (editMode && currentEditIndex !== null) {
-      // ✅ EDIT EXISTING EXPENSE
       const updatedExpenses = [...expenses];
       const oldExpense = updatedExpenses[currentEditIndex];
       const balanceDiff = expenseAmount - Number(oldExpense.price);
 
-      // Adjust wallet based on difference
       if (walletBalance - balanceDiff < 0) {
         alert('❌ Not enough wallet balance for this update!');
         return;
@@ -68,11 +75,10 @@ localStorage.setItem('walletBalance',walletBalance);
       setEditMode(false);
       setCurrentEditIndex(null);
     } else {
-      // ✅ ADD NEW EXPENSE
       const updatedBalance = walletBalance - expenseAmount;
       setWalletBalance(updatedBalance);
       localStorage.setItem('walletBalance', updatedBalance);
-      localStorage.setItem('expenses', JSON.stringify([...expenses,newExpense]))
+      localStorage.setItem('expenses', JSON.stringify([...expenses, newExpense]));
       setExpenses((prev) => [...prev, newExpense]);
     }
 
@@ -87,28 +93,38 @@ localStorage.setItem('walletBalance',walletBalance);
     setExpenses((prev) => prev.filter((_, i) => i !== index));
     setWalletBalance(newWallet);
     localStorage.setItem('walletBalance', newWallet);
-    localStorage.setItem('expenses', JSON.stringify(expenses))
+    localStorage.setItem('expenses', JSON.stringify(expenses));
   };
 
-  // ✅ EDIT BUTTON HANDLER
   const handleEditExpense = (index) => {
     setEditMode(true);
     setCurrentEditIndex(index);
     setShowExpenseModal(true);
   };
 
-  const chartData = expenses.map(exp => ({
-  name: exp.category,
-  value: Number(exp.price)
-}));
+  const handleAddBalance = (amount) => {
+    const added = Number(amount);
+    if (isNaN(added) || added <= 0) {
+      alert('Please enter a valid amount');
+      return;
+    }
+    const newWallet = walletBalance + added;
+    setWalletBalance(newWallet);
+    localStorage.setItem('walletBalance', newWallet);
+    setShowModal(false);
+  };
 
-const categoryTotals = expenses.reduce((acc, exp) => {
-  acc[exp.category] = (acc[exp.category] || 0) + Number(exp.price);
-  return acc;
-}, {});
+  const chartData = expenses.map((exp) => ({
+    name: exp.category,
+    value: Number(exp.price),
+  }));
 
-const barData = Object.entries(categoryTotals).map(([name, value]) => ({ name, value }));
+  const categoryTotals = expenses.reduce((acc, exp) => {
+    acc[exp.category] = (acc[exp.category] || 0) + Number(exp.price);
+    return acc;
+  }, {});
 
+  const barData = Object.entries(categoryTotals).map(([name, value]) => ({ name, value }));
 
   return (
     <>
@@ -143,31 +159,34 @@ const barData = Object.entries(categoryTotals).map(([name, value]) => ({ name, v
           buttonColor="red"
           handleClick={handleExpenseClick}
         />
-  <div style={{ width: '350px', height: '240px', background: 'white', borderRadius: '10px' }}>
-    <ResponsiveContainer>
-      <PieChart>
-        <Pie
-          data={chartData}
-          dataKey="value"
-          nameKey="name"
-          cx="50%"
-          cy="50%"
-          outerRadius={80}
-          fill="#8884d8"
-          label
-        >
-          {chartData.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF'][index % 5]} />
-          ))}
-        </Pie>
-        <Tooltip />
-        <Legend />
-      </PieChart>
-    </ResponsiveContainer>
-  </div>
-
+        <div style={{ width: '350px', height: '240px', background: 'white', borderRadius: '10px' }}>
+          <ResponsiveContainer>
+            <PieChart>
+              <Pie
+                data={chartData}
+                dataKey="value"
+                nameKey="name"
+                cx="50%"
+                cy="50%"
+                outerRadius={80}
+                fill="#8884d8"
+                label
+              >
+                {chartData.map((entry, index) => (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF'][index % 5]}
+                  />
+                ))}
+              </Pie>
+              <Tooltip />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
+      {/* ✅ Transactions + Charts Area */}
       <div
         style={{
           display: 'flex',
@@ -178,6 +197,7 @@ const barData = Object.entries(categoryTotals).map(([name, value]) => ({ name, v
           padding: '0 10px',
         }}
       >
+        {/* ✅ Recent Transactions */}
         <div style={{ width: '74%', display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <h3 style={{ color: 'white', margin: 0 }}>Recent Transactions</h3>
           <div style={{ background: 'white', borderRadius: '10px', padding: '10px' }}>
@@ -198,9 +218,19 @@ const barData = Object.entries(categoryTotals).map(([name, value]) => ({ name, v
                   >
                     <div style={{ display: 'flex', alignItems: 'center' }}>
                       <LocalPizzaIcon
-                        style={{ background: '#e2e2e2', borderRadius: '50%', padding: '10px' }}
+                        style={{
+                          background: '#e2e2e2',
+                          borderRadius: '50%',
+                          padding: '10px',
+                        }}
                       />
-                      <div style={{ marginLeft: '10px', display: 'flex', flexDirection: 'column' }}>
+                      <div
+                        style={{
+                          marginLeft: '10px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                        }}
+                      >
                         <div>{exp.title}</div>
                         <div style={{ fontSize: '0.8em', color: '#666' }}>
                           {exp.date} • {exp.category}
@@ -231,47 +261,54 @@ const barData = Object.entries(categoryTotals).map(([name, value]) => ({ name, v
                       />
                     </div>
                   </div>
-                  <hr style={{ border: 'none', borderTop: '1px solid #ddd', margin: '5px 0' }} />
+                  <hr
+                    style={{
+                      border: 'none',
+                      borderTop: '1px solid #ddd',
+                      margin: '5px 0',
+                    }}
+                  />
                 </div>
               ))
             )}
           </div>
         </div>
 
+        {/* ✅ Top Expenses Bar Chart */}
         <div style={{ width: '23%', display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <h3 style={{ color: 'white', margin: 0 }}>Top Expenses</h3>
           <div style={{ background: 'white', borderRadius: '10px', height: '250px' }}>
-  <div style={{ width: '300px', height: '250px', background: 'white', borderRadius: '10px' }}>
-   <ResponsiveContainer width="100%" height="100%">
-  <BarChart data={barData} layout="vertical" margin={{ top: 10, right: 20, bottom: 10, left: 40 }}>
-    <CartesianGrid strokeDasharray="3 3" />
-    <XAxis type="number" />
-    <YAxis type="category" dataKey="name" width={80} />
-    <Tooltip />
-    <Legend />
-    <Bar dataKey="value" fill="#82ca9d" barSize={5} radius={[10, 10, 10, 10]} />
-  </BarChart>
-</ResponsiveContainer>
-
-  </div>
-
-            
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={barData}
+                layout="vertical"
+                margin={{ top: 10, right: 20, bottom: 10, left: 40 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" />
+                <YAxis type="category" dataKey="name" width={80} />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="value" fill="#82ca9d" barSize={5} radius={[10, 10, 10, 10]} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
       </div>
 
+      {/* ✅ Income Modal */}
       {showModal && (
         <Modal
           titleBalance="Add Balance"
           incomeButton="Income Amount"
           cancelButton="Cancel"
           show={showModal}
-          onClose={() => setShowModal(false)}
-          onIncome={handleIncome}
+          onClose={handleCloseModal}
           onAddBalance={handleAddBalance}
         />
       )}
 
+      {/* ✅ Expense Modal */}
       {showExpenseModal && (
         <ModalExpense
           titleExpense={editMode ? 'Edit Expense' : 'Add Expenses'}
@@ -280,7 +317,7 @@ const barData = Object.entries(categoryTotals).map(([name, value]) => ({ name, v
           onAddExpense={handleAddExpense}
           onCancel={() => setShowExpenseModal(false)}
           walletBalance={walletBalance}
-          editData={editMode ? expenses[currentEditIndex] : null} // ✅ Pass existing data
+          editData={editMode ? expenses[currentEditIndex] : null}
         />
       )}
     </>
