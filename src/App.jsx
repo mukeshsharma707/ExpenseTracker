@@ -242,16 +242,17 @@ const barData = Object.entries(categoryTotals).map(([name, value]) => ({ name, v
           <h3 style={{ color: 'white', margin: 0 }}>Top Expenses</h3>
           <div style={{ background: 'white', borderRadius: '10px', height: '250px' }}>
   <div style={{ width: '300px', height: '250px', background: 'white', borderRadius: '10px' }}>
-    <ResponsiveContainer>
-      <BarChart data={barData}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="name" />
-        <YAxis />
-        <Tooltip />
-        <Legend />
-        <Bar dataKey="value" fill="#82ca9d" />
-      </BarChart>
-    </ResponsiveContainer>
+   <ResponsiveContainer width="100%" height="100%">
+  <BarChart data={barData} layout="vertical" margin={{ top: 10, right: 20, bottom: 10, left: 40 }}>
+    <CartesianGrid strokeDasharray="3 3" />
+    <XAxis type="number" />
+    <YAxis type="category" dataKey="name" width={80} />
+    <Tooltip />
+    <Legend />
+    <Bar dataKey="value" fill="#82ca9d" barSize={5} radius={[10, 10, 10, 10]} />
+  </BarChart>
+</ResponsiveContainer>
+
   </div>
 
             
