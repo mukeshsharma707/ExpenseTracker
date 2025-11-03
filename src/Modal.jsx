@@ -70,7 +70,7 @@ const Modal = ({
           }}
         />
 
-        <button
+        <button type='submit'
           style={{ ...buttonStyle, background: 'yellow' }}
           onClick={handleAddBalance}
         >

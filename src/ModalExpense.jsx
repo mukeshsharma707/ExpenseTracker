@@ -124,7 +124,7 @@ const ModalExpense = ({
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-          <button
+          <button type='submit'
             onClick={handleAddExpenseClick}
             style={{
               backgroundColor: 'orange',
