@@ -59,7 +59,7 @@ const Modal = ({
         {/* ✅ replaced "Income Amount" button with input box */}
         <input
           type="number"
-          placeholder="Enter Amount"
+          placeholder="Income Amount"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           style={{
